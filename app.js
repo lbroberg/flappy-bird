@@ -27,7 +27,13 @@ let config = {
   }
   
   let hasLanded = false;
+  let cursors;
+  let hasBumped = false;
+  let isGameStarted = false;
+  let messageToPlayer;
+
   function create() {
+    cursors = this.input.keyboard.createCursorKeys();
     const background = this.add.image(0, 0, 'background').setOrigin(0, 0);
     const roads = this.physics.add.staticGroup();
     const topColumns = this.physics.add.staticGroup({
@@ -44,9 +50,67 @@ let config = {
     bird = this.physics.add.sprite(0, 50, 'bird').setScale(2);
     bird.setBounce(0.2);
     bird.setCollideWorldBounds(true);
+
+    this.physics.add.overlap(bird, road, () => hasLanded = true, null, this);
     this.physics.add.collider(bird, road);
 
+    this.physics.add.overlap(bird, topColumns, ()=>hasBumped=true,null, this);
+    this.physics.add.overlap(bird, bottomColumns, ()=>hasBumped=true,null, this);
+    this.physics.add.collider(bird, topColumns);
+    this.physics.add.collider(bird, bottomColumns);
+
+    messageToPlayer = this.add.text(0, 0, `Instructions: Press space bar to start`, { fontFamily: '"Comic Sans MS", Times, serif', fontSize: "20px", color: "white", backgroundColor: "black" });
+    Phaser.Display.Align.In.BottomCenter(messageToPlayer, background, 0, 50);
   }
   
   function update () {
+    if (cursors.up.isDown) {
+        bird.setVelocityY(-160);
+    }
+
+    if (cursors.up.isDown && !hasLanded) {
+        bird.setVelocityY(-160);
+    }
+
+    if (!hasLanded) {
+        bird.body.velocity.x = 50;
+    }
+    if (hasLanded) {
+        bird.body.velocity.x = 0;
+    }
+
+    if (cursors.up.isDown && !hasLanded && !hasBumped) {
+        bird.setVelocityY(-160);
+    }
+    
+    if (!hasLanded || !hasBumped) {
+        bird.body.velocity.x = 50;
+    }
+      
+    if (hasLanded || hasBumped || !isGameStarted) {
+        bird.body.velocity.x = 0;
+    }
+
+    if (cursors.space.isDown && !isGameStarted) {
+        isGameStarted = true;
+    }
+
+    if (!isGameStarted) {
+        bird.setVelocityY(-160);
+    }
+
+    if (cursors.space.isDown && !isGameStarted) {
+        isGameStarted = true;
+        messageToPlayer.text = 'Instructions: Press the "^" button to stay upright\nAnd don\'t hit the columns or ground';
+    }
+
+    if (hasLanded || hasBumped) {
+        messageToPlayer.text = `Oh no! You crashed!`;
+    }
+
+    if (bird.x > 750) {
+        bird.setVelocityY(40);
+        messageToPlayer.text = `Congrats! You won!`;
+    } 
+
   }
